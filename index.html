@@ -1,0 +1,1429 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Barnet FC AI Recruitment Assistant - Premier League Data Demo</title>
+<style>
+:root{
+  --bg:#f5f7fb; --panel:#ffffff; --ink:#101828; --muted:#667085; --line:#d0d5dd;
+  --dark:#111111; --bee:#f47c20; --good:#f47c20; --warn:#b54708; --blue:#175cd3;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+.app{height:100vh;display:grid;grid-template-columns:370px 1fr;overflow:hidden}
+.left{height:100vh;background:#111111;border-right:3px solid #f47c20;color:#fff;padding:18px;display:flex;flex-direction:column;gap:12px;overflow:hidden}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:42px;height:42px;border-radius:50%;box-shadow:0 0 0 2px #f47c20;background:var(--bee);color:#111;display:flex;align-items:center;justify-content:center;font-weight:800}
+.brand h1{font-size:18px;margin:0}
+.brand p{font-size:12px;margin:3px 0 0;color:#cbd5e1}
+.notice{font-size:11px;line-height:1.45;color:#cbd5e1;background:rgba(255,255,255,.07);padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,.10)}
+.chat{flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);border-radius:16px;padding:12px;overflow-y:auto;min-height:0;scrollbar-width:thin}
+.msg{margin:0 0 10px;display:flex}
+.bubble{font-size:12px;line-height:1.45;padding:9px 11px;border-radius:14px;max-width:92%;word-break:break-word}
+.ai .bubble{background:rgba(255,255,255,.10);color:#fff}
+.user{justify-content:flex-end}
+.user .bubble{background:var(--bee);color:#111}
+.examples{display:flex;flex-wrap:wrap;gap:6px;max-height:78px;overflow-y:auto;scrollbar-width:thin}
+.examples button{font-size:11px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.07);color:#fff;border-radius:999px;padding:7px 9px;cursor:pointer}
+.main{height:100vh;padding:22px;overflow-y:auto}
+.topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}
+.topbar h2{font-size:24px;margin:0 0 5px}
+.topbar p{font-size:13px;color:var(--muted);margin:0;line-height:1.5}
+.chips{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.chip{font-size:12px;padding:7px 10px;border:1px solid var(--line);background:#fff;border-radius:999px;color:#344054}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(240px,1fr));gap:14px;margin-bottom:18px}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:15px;box-shadow:0 2px 8px rgba(16,24,40,.04)}
+.cardTop{display:flex;justify-content:space-between;gap:10px}
+.card h3{margin:0;font-size:17px}
+.meta{font-size:12px;color:var(--muted);margin:4px 0 10px;line-height:1.4}
+.match{font-size:12px;font-weight:800;border-radius:999px;padding:5px 8px;height:max-content;background:#dcfae6;color:var(--good);white-space:nowrap}
+.low{background:#fff4e5;color:var(--warn)}
+.reason{font-size:12px;color:#344054;line-height:1.5;background:#f9fafb;border-radius:10px;padding:9px;margin:10px 0}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.stat{background:#f9fafb;border:1px solid #eaecf0;border-radius:10px;padding:7px}
+.stat span{display:block;font-size:10px;color:var(--muted)}
+.stat b{font-size:13px}
+.panel{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.panelHead{padding:13px 15px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px}
+.panelHead b{font-size:14px}
+.filters{font-size:12px;color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{text-align:left;padding:10px;border-bottom:1px solid #eaecf0;white-space:nowrap}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);background:#f9fafb}
+td.reasonCol{white-space:normal;min-width:250px;color:#344054}
+@media(max-width:950px){.app{grid-template-columns:1fr}.left{min-height:auto}.grid{grid-template-columns:1fr}.chips{justify-content:flex-start}table{display:block;overflow:auto}}
+</style>
+
+<style>
+.breakdownBtn{
+  width:100%;
+  margin:10px 0 12px;
+  padding:9px 10px;
+  border:0;
+  border-radius:10px;
+  background:#111;
+  color:#fff;
+  font-weight:800;
+  cursor:pointer;
+}
+.breakdownBtn:hover{
+  background:#f47c20;
+  color:#111;
+}
+.breakdownView{
+  position:fixed;
+  inset:0;
+  background:#f4f5f7;
+  z-index:9999;
+  display:none;
+  overflow-y:auto;
+}
+.breakdownView.active{
+  display:block;
+}
+.breakdownPage{
+  min-height:100vh;
+  padding:24px;
+}
+.breakdownTop{
+  background:#111;
+  color:#fff;
+  border-radius:18px;
+  padding:18px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  border-bottom:5px solid #f47c20;
+}
+.backBtn{
+  background:#f47c20;
+  color:#111;
+  border:0;
+  border-radius:12px;
+  padding:11px 14px;
+  font-weight:900;
+  cursor:pointer;
+}
+.breakdownTitle{
+  flex:1;
+}
+.breakdownTitle h2{
+  margin:3px 0;
+  font-size:30px;
+}
+.breakdownTitle p{
+  margin:0;
+  color:#d0d0d0;
+}
+.miniLabel{
+  color:#f47c20;
+  font-size:11px;
+  letter-spacing:3px;
+  text-transform:uppercase;
+  font-weight:900;
+}
+.scoreCircle{
+  width:124px;
+  height:124px;
+  border-radius:50%;
+  background:#f47c20;
+  color:#111;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  flex-shrink:0;
+}
+.scoreCircle span{
+  font-size:31px;
+  font-weight:950;
+}
+.scoreCircle small{
+  font-size:11px;
+  font-weight:800;
+  text-transform:uppercase;
+}
+.breakdownGrid{
+  display:grid;
+  grid-template-columns:2fr 1fr;
+  gap:16px;
+  margin-top:16px;
+}
+.breakdownCard{
+  background:#fff;
+  border-radius:18px;
+  border:1px solid rgba(17,17,17,.10);
+  padding:18px;
+  box-shadow:0 8px 22px rgba(16,24,40,.06);
+}
+.breakdownCard.big{
+  grid-row:span 2;
+}
+.breakdownCard h3{
+  margin:0 0 6px;
+}
+.helperText{
+  margin:0 0 14px;
+  color:#667085;
+  font-size:13px;
+}
+.barRow{
+  display:grid;
+  grid-template-columns:220px 1fr 54px;
+  gap:12px;
+  align-items:center;
+  padding:12px 0;
+  border-bottom:1px solid #ececec;
+}
+.barLabel b{
+  display:block;
+  font-size:13px;
+}
+.barLabel span{
+  display:block;
+  font-size:11px;
+  color:#667085;
+  line-height:1.35;
+}
+.barTrack{
+  height:18px;
+  background:#f1f1f1;
+  border-radius:999px;
+  overflow:hidden;
+}
+.barFill{
+  height:100%;
+  background:#f47c20;
+  border-radius:999px;
+}
+.barFill.negative{
+  background:#555;
+}
+.baseFill{
+  background:#111;
+}
+.barPoints{
+  font-weight:900;
+  text-align:right;
+}
+.profileGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:9px;
+}
+.profileItem{
+  background:#fff5ed;
+  border:1px solid rgba(244,124,32,.25);
+  border-radius:12px;
+  padding:10px;
+}
+.profileItem span{
+  display:block;
+  font-size:11px;
+  color:#7a3300;
+  text-transform:uppercase;
+  letter-spacing:.5px;
+}
+.profileItem b{
+  display:block;
+  font-size:18px;
+  color:#111;
+}
+.fitText{
+  color:#333;
+  line-height:1.55;
+  font-size:14px;
+}
+@media(max-width:900px){
+  .breakdownTop{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+  .breakdownGrid{
+    grid-template-columns:1fr;
+  }
+  .barRow{
+    grid-template-columns:1fr;
+  }
+  .barPoints{
+    text-align:left;
+  }
+}
+</style>
+
+
+<style>
+.tableBreakdownBtn{
+  padding:6px 10px;
+  border:0;
+  border-radius:8px;
+  background:#f47c20;
+  color:#111;
+  font-size:11px;
+  font-weight:900;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.tableBreakdownBtn:hover{
+  background:#111;
+  color:#fff;
+}
+</style>
+
+
+<style>
+.playerLookupPanel{
+  margin-bottom:16px;
+  background:#fff;
+  border:1px solid rgba(17,17,17,.10);
+  border-radius:16px;
+  overflow:hidden;
+  box-shadow:0 8px 22px rgba(16,24,40,.05);
+}
+.playerLookupHead{
+  background:#111;
+  color:#fff;
+  border-bottom:3px solid #f47c20;
+  padding:13px 15px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.playerLookupBody{
+  padding:14px;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(220px,1fr));
+  gap:12px;
+}
+.lookupCard{
+  border:1px solid #e5e5e5;
+  border-top:4px solid #f47c20;
+  border-radius:14px;
+  padding:13px;
+  background:#fff;
+  cursor:pointer;
+  transition:all .18s ease;
+}
+.lookupCard:hover{
+  transform:translateY(-2px);
+  box-shadow:0 8px 20px rgba(16,24,40,.10);
+  background:#fff8f2;
+}
+.lookupCard h3{
+  margin:0 0 5px;
+  font-size:16px;
+}
+.lookupMeta{
+  color:#667085;
+  font-size:12px;
+  line-height:1.45;
+}
+.lookupTag{
+  margin-top:9px;
+  display:inline-block;
+  background:#f47c20;
+  color:#111;
+  border-radius:999px;
+  padding:5px 8px;
+  font-size:11px;
+  font-weight:900;
+}
+@media(max-width:1200px){
+  .playerLookupBody{grid-template-columns:1fr;}
+}
+</style>
+
+
+<style>
+#playerAutocomplete{
+  position:absolute;
+  left:0;
+  right:110px;
+  top:56px;
+  background:#111;
+  border:1px solid #f47c20;
+  border-radius:12px;
+  max-height:300px;
+  overflow-y:auto;
+  z-index:9999;
+  display:none;
+  box-shadow:0 12px 30px rgba(0,0,0,.35);
+}
+.autoItem{
+  padding:12px 14px;
+  cursor:pointer;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  color:#fff;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  white-space:nowrap;
+}
+.autoItem:hover{
+  background:#1f1f1f;
+}
+</style>
+
+
+
+<style id="composer-clean-v13">
+.left{height:100vh;min-height:0;display:flex;flex-direction:column;overflow:hidden;}
+.chat{flex:1 1 auto;min-height:0;overflow-y:auto;}
+.composer{
+  flex:0 0 auto;position:relative;width:100%;min-height:42px;
+  padding:5px 5px 5px 12px;margin-top:10px;display:flex;align-items:center;gap:8px;
+  background:#1f1f1f;border:1px solid rgba(244,124,32,.36);
+  border-radius:999px;box-shadow:0 8px 20px rgba(0,0,0,.24);
+}
+.composer #q{
+  flex:1;width:100%;min-height:28px;height:28px;max-height:96px;
+  padding:5px 4px;border:0;outline:0;resize:none;background:transparent;color:#fff;
+  font:13px/1.35 Inter,Arial,sans-serif;overflow-y:hidden;box-sizing:border-box;
+}
+.composer #q::placeholder{color:transparent;}
+.composer .sendBtn{
+  width:32px;height:32px;min-width:32px;min-height:32px;max-width:32px;max-height:32px;
+  padding:0;border:0;border-radius:50%;aspect-ratio:1/1;display:flex;align-items:center;
+  justify-content:center;flex:0 0 32px;background:#f47c20;color:#111;
+  font-size:16px;font-weight:900;line-height:1;cursor:pointer;
+}
+.composer .sendBtn:hover{background:#ff8a2a;}
+.examples{display:none;}
+</style>
+
+
+
+<style id="barnet-theme-v13">
+:root{--barnet-orange:#f47c20;--barnet-black:#0b0b0b;--barnet-panel:#1f1f1f;--barnet-soft:#fff5ed;}
+body{background:linear-gradient(135deg,#f6f7f9 0%,#eef1f5 100%);}
+.left{background:linear-gradient(180deg,#0b0b0b 0%,#161616 100%);border-right:4px solid var(--barnet-orange);box-shadow:inset -1px 0 0 rgba(255,255,255,.06);}
+.brand{position:relative;padding-bottom:16px;border-bottom:1px solid rgba(244,124,32,.25);}
+.brand:after{content:"THE HIVE LONDON";position:absolute;left:0;bottom:-9px;font-size:9px;letter-spacing:5px;color:var(--barnet-orange);font-weight:800;}
+.logo{background:var(--barnet-orange);color:#0b0b0b;border-radius:8px;box-shadow:none;font-weight:900;}
+.brand h1{font-size:17px;letter-spacing:.2px;}
+.brand p{color:#cfcfcf;}
+.notice{background:#1f1f1f;border:1px solid rgba(244,124,32,.25);}
+.notice button,.tableBreakdownBtn,.lookupTag,.backBtn{background:var(--barnet-orange);color:#111;}
+#apiKey,#modelSelect{border-color:rgba(244,124,32,.28);}
+.chat{background:#181818;border:1px solid rgba(244,124,32,.22);}
+.ai .bubble{background:#2b2b2b;border:1px solid rgba(255,255,255,.06);}
+.user .bubble{background:var(--barnet-orange);color:#111;font-weight:650;}
+.main:before{content:"";display:block;height:18px;margin:-22px -22px 18px -22px;background:linear-gradient(135deg,var(--barnet-orange) 0%,var(--barnet-orange) 18%,#333 18%,#333 82%,var(--barnet-orange) 82%,var(--barnet-orange) 100%);}
+.topbar{background:#fff;border:1px solid rgba(17,17,17,.08);border-left:5px solid var(--barnet-orange);border-radius:16px;padding:16px;margin-bottom:16px;box-shadow:0 4px 14px rgba(16,24,40,.05);}
+.chip{border-color:rgba(244,124,32,.35);background:#fff7f1;color:#7a3300;font-weight:700;}
+.globalSearchBlock{background:#fff;border:1px solid rgba(17,17,17,.10);border-radius:16px;padding:16px;margin-bottom:16px;box-shadow:0 8px 22px rgba(16,24,40,.06);}
+.globalSearchBlock h3{margin:0 0 10px 0;font-size:17px;}
+.globalSearchWrap{position:relative;}
+#globalPlayerSearch{width:100%;height:48px;border:1px solid #d0d5dd;border-radius:12px;padding:0 16px;font-size:14px;outline:none;}
+#globalPlayerSearch:focus{border-color:var(--barnet-orange);box-shadow:0 0 0 3px rgba(244,124,32,.15);}
+#globalAutocomplete{position:absolute;left:0;right:0;top:54px;background:#fff;border:1px solid #d0d5dd;border-radius:14px;box-shadow:0 18px 35px rgba(16,24,40,.18);z-index:99999;display:none;overflow:hidden;}
+.globalItem{padding:13px 16px;cursor:pointer;border-bottom:1px solid #eef0f3;}
+.globalItem:hover{background:#fff8f2;}
+.globalItem strong{font-size:14px;color:#111;}
+.globalItem .meta{font-size:12px;color:#667085;margin-top:3px;}
+.card{border:1px solid rgba(17,17,17,.10);border-top:4px solid var(--barnet-orange);box-shadow:0 8px 22px rgba(16,24,40,.07);}
+.card:before{content:"SCOUT REPORT";display:block;font-size:10px;letter-spacing:1.5px;color:#8a3a00;font-weight:900;margin-bottom:8px;}
+.match{background:var(--barnet-orange);color:#111;border-radius:6px;text-transform:uppercase;letter-spacing:.3px;}
+.match:before{content:"Score ";}
+.reason{background:#fff5ed;border-left:3px solid var(--barnet-orange);color:#252525;}
+.stat{background:#fafafa;border:1px solid #e5e5e5;}
+.panel{border:1px solid rgba(17,17,17,.10);box-shadow:0 8px 22px rgba(16,24,40,.05);}
+.panelHead{background:#111;color:#fff;border-bottom:3px solid var(--barnet-orange);}
+.panelHead .filters{color:#f2b17f;}
+th{background:#2b2b2b;color:#fff;}
+td{background:#fff;}
+tr:hover td{background:#fff8f2;}
+.breakdownBtn{background:#111;color:#fff;}
+.breakdownBtn:hover{background:var(--barnet-orange);color:#111;}
+</style>
+
+
+<style id="initial-state-v16">
+body.initial-state #cards,
+body.initial-state #thinkingPanel{
+  display:none !important;
+}
+body.initial-state .recruitOnly{
+  display:none !important;
+}
+body.initial-state .panel{
+  margin-top:16px;
+}
+body.initial-state #filters{
+  color:#f2b17f;
+}
+.profileOpenBtn{
+  padding:6px 10px;
+  border:0;
+  border-radius:8px;
+  background:#111;
+  color:#fff;
+  font-size:11px;
+  font-weight:900;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.profileOpenBtn:hover{
+  background:#f47c20;
+  color:#111;
+}
+</style>
+
+</head>
+<body>
+<div class="app">
+  <aside class="left">
+    <div class="brand">
+      <div class="logo">BFC</div>
+      <div>
+        <h1>Barnet FC AI Recruitment Assistant</h1>
+        <p>Premier League public-data style demo</p>
+      </div>
+    </div>
+    <div class="notice">
+      <div style="font-weight:700;margin-bottom:7px;">Claude API optional</div>
+      <input id="apiKey" type="password" placeholder="Paste Claude API key: sk-ant-..." style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.08);color:#fff;outline:none;margin-bottom:7px;">
+      <select id="modelSelect" style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:#202938;color:#fff;outline:none;margin-bottom:7px;">
+        <option value="claude-sonnet-4-6">claude-sonnet-4-6</option>
+        <option value="claude-haiku-4-5">claude-haiku-4-5</option>
+        <option value="claude-opus-4-8">claude-opus-4-8</option>
+      </select>
+      <button onclick="connectClaude()" style="width:100%;padding:10px;border:0;border-radius:10px;background:#f5b800;font-weight:800;cursor:pointer;">Use Claude Mode</button>
+      <div id="modeText" style="font-size:11px;color:#cbd5e1;margin-top:7px;">Current mode: Rule-based demo (use Live Server, not file://)</div>
+    </div>
+    <div class="chat" id="chat">
+      <div class="msg ai"><div class="bubble">You can either search for players or ask recruitment questions. For example: “Find me a young left-footed winger”, “What does aerial mean?”, or “Explain a Kante-type midfielder”.</div></div>
+    </div>
+    <div class="composer">
+      <textarea id="q" placeholder=""></textarea>
+      <button class="sendBtn" onclick="search()" aria-label="Send">↑</button>
+    </div>
+  </aside>
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h2 id="pageTitle">Player Database</h2>
+        <p id="pageSubtitle">Search a player directly, or enter a recruitment brief on the left to generate AI-ranked recommendations.</p>
+      </div>
+      <div class="chips">
+        <div class="chip" id="modeChip">Claude Recruitment Mode</div>
+        <div class="chip">AI Interpretation</div>
+        <div class="chip">Demo Player Pool</div>
+      </div>
+    </div>
+    <div class="globalSearchBlock">
+      <h3>🔍 Search Players</h3>
+      <div class="globalSearchWrap">
+        <input id="globalPlayerSearch" placeholder="Search player by name... e.g. Bruno, Palmer, Haaland"><div style="margin-top:8px;font-size:12px;color:#667085;">Direct player lookup. Click a result to open the scout report.</div>
+        <div id="globalAutocomplete"></div>
+      </div>
+    </div>
+    <div id="thinkingPanel" class="panel" style="margin-bottom:16px;display:none;">
+      <div class="panelHead"><b>AI Interpretation</b><span class="filters">How the request was understood</span></div>
+      <div id="thinkingBody" style="padding:14px;display:flex;gap:8px;flex-wrap:wrap;"></div>
+    </div>
+    <div id="playerLookupPanel" style="display:none;"></div>
+    <div id="cards" class="grid"></div>
+    <div class="panel">
+      <div class="panelHead">
+        <b>Player Data Table</b>
+        <span class="filters" id="filters">Showing top matches from all players</span>
+      </div>
+      <div style="overflow:auto">
+        <table>
+          <thead>
+            <tr><th>Player</th><th>Age</th><th>Pos</th><th>Club</th><th>Foot</th><th>Value</th><th>G</th><th>A</th><th>Press</th><th>Aerial</th><th class="recruitOnly">Recruitment Score</th><th>Breakdown</th><th class="recruitOnly">Reason</th></tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+<script>
+const PLAYERS = [{"name": "Bukayo Saka", "age": 23, "pos": "RW", "club": "Arsenal", "league": "Premier League", "nat": "England", "foot": "Left", "value": "£120m", "contract": "2027", "apps": 35, "goals": 16, "assists": 9, "shots": 88, "keyPasses": 74, "passes": 1290, "tackles": 51, "interceptions": 20, "aerial": 31, "pressing": 76, "pace": 86, "style": "creative winger, final third threat, ball carrier"}, {"name": "Martin Odegaard", "age": 26, "pos": "AM", "club": "Arsenal", "league": "Premier League", "nat": "Norway", "foot": "Left", "value": "£95m", "contract": "2028", "apps": 34, "goals": 8, "assists": 10, "shots": 67, "keyPasses": 96, "passes": 1802, "tackles": 43, "interceptions": 19, "aerial": 18, "pressing": 81, "pace": 70, "style": "creative playmaker, tempo setter, high chance creation"}, {"name": "Declan Rice", "age": 26, "pos": "DM", "club": "Arsenal", "league": "Premier League", "nat": "England", "foot": "Right", "value": "£100m", "contract": "2028", "apps": 38, "goals": 7, "assists": 8, "shots": 49, "keyPasses": 58, "passes": 2140, "tackles": 72, "interceptions": 54, "aerial": 70, "pressing": 84, "pace": 72, "style": "ball-winning midfielder, box-to-box, set pieces"}, {"name": "William Saliba", "age": 24, "pos": "CB", "club": "Arsenal", "league": "Premier League", "nat": "France", "foot": "Right", "value": "£80m", "contract": "2027", "apps": 38, "goals": 2, "assists": 1, "shots": 18, "keyPasses": 7, "passes": 2680, "tackles": 42, "interceptions": 41, "aerial": 78, "pressing": 55, "pace": 78, "style": "ball-playing centre back, recovery pace, aerial presence"}, {"name": "Gabriel Martinelli", "age": 24, "pos": "LW", "club": "Arsenal", "league": "Premier League", "nat": "Brazil", "foot": "Right", "value": "£65m", "contract": "2027", "apps": 35, "goals": 6, "assists": 5, "shots": 61, "keyPasses": 41, "passes": 846, "tackles": 37, "interceptions": 16, "aerial": 28, "pressing": 79, "pace": 90, "style": "direct winger, pressing, pace in transition"}, {"name": "Erling Haaland", "age": 25, "pos": "ST", "club": "Manchester City", "league": "Premier League", "nat": "Norway", "foot": "Left", "value": "£180m", "contract": "2034", "apps": 35, "goals": 27, "assists": 5, "shots": 121, "keyPasses": 28, "passes": 540, "tackles": 12, "interceptions": 5, "aerial": 82, "pressing": 58, "pace": 84, "style": "clinical striker, aerial threat, penalty box finisher"}, {"name": "Phil Foden", "age": 25, "pos": "AM", "club": "Manchester City", "league": "Premier League", "nat": "England", "foot": "Left", "value": "£130m", "contract": "2027", "apps": 35, "goals": 10, "assists": 6, "shots": 81, "keyPasses": 63, "passes": 1502, "tackles": 36, "interceptions": 18, "aerial": 20, "pressing": 72, "pace": 82, "style": "creative attacking midfielder, half-space playmaker"}, {"name": "Rodri", "age": 29, "pos": "DM", "club": "Manchester City", "league": "Premier League", "nat": "Spain", "foot": "Right", "value": "£110m", "contract": "2027", "apps": 34, "goals": 8, "assists": 9, "shots": 52, "keyPasses": 61, "passes": 3180, "tackles": 68, "interceptions": 62, "aerial": 76, "pressing": 71, "pace": 64, "style": "elite defensive midfielder, controller, progressive passer"}, {"name": "Bernardo Silva", "age": 30, "pos": "AM", "club": "Manchester City", "league": "Premier League", "nat": "Portugal", "foot": "Left", "value": "£60m", "contract": "2026", "apps": 33, "goals": 6, "assists": 8, "shots": 43, "keyPasses": 66, "passes": 1805, "tackles": 58, "interceptions": 28, "aerial": 16, "pressing": 88, "pace": 75, "style": "technical midfielder, pressing, ball retention"}, {"name": "Jeremy Doku", "age": 23, "pos": "LW", "club": "Manchester City", "league": "Premier League", "nat": "Belgium", "foot": "Right", "value": "£65m", "contract": "2028", "apps": 29, "goals": 4, "assists": 8, "shots": 47, "keyPasses": 55, "passes": 720, "tackles": 26, "interceptions": 10, "aerial": 17, "pressing": 70, "pace": 92, "style": "explosive winger, dribbler, one-v-one threat"}, {"name": "Mohamed Salah", "age": 33, "pos": "RW", "club": "Liverpool", "league": "Premier League", "nat": "Egypt", "foot": "Left", "value": "£55m", "contract": "2027", "apps": 38, "goals": 29, "assists": 18, "shots": 132, "keyPasses": 88, "passes": 1220, "tackles": 22, "interceptions": 9, "aerial": 25, "pressing": 64, "pace": 82, "style": "elite goalscoring winger, creator, left-footed forward"}, {"name": "Virgil van Dijk", "age": 34, "pos": "CB", "club": "Liverpool", "league": "Premier League", "nat": "Netherlands", "foot": "Right", "value": "£35m", "contract": "2027", "apps": 36, "goals": 3, "assists": 1, "shots": 25, "keyPasses": 12, "passes": 2360, "tackles": 39, "interceptions": 46, "aerial": 90, "pressing": 50, "pace": 72, "style": "dominant centre back, leadership, aerial duel winner"}, {"name": "Trent Alexander-Arnold", "age": 26, "pos": "RB", "club": "Liverpool", "league": "Premier League", "nat": "England", "foot": "Right", "value": "£75m", "contract": "2025", "apps": 28, "goals": 3, "assists": 8, "shots": 48, "keyPasses": 91, "passes": 1880, "tackles": 46, "interceptions": 28, "aerial": 40, "pressing": 62, "pace": 76, "style": "creative full-back, long passing, chance creation"}, {"name": "Dominik Szoboszlai", "age": 24, "pos": "AM", "club": "Liverpool", "league": "Premier League", "nat": "Hungary", "foot": "Right", "value": "£75m", "contract": "2028", "apps": 36, "goals": 6, "assists": 7, "shots": 74, "keyPasses": 70, "passes": 1608, "tackles": 63, "interceptions": 31, "aerial": 55, "pressing": 86, "pace": 80, "style": "high-energy midfielder, ball striking, pressing"}, {"name": "Luis Diaz", "age": 28, "pos": "LW", "club": "Liverpool", "league": "Premier League", "nat": "Colombia", "foot": "Right", "value": "£70m", "contract": "2027", "apps": 36, "goals": 13, "assists": 5, "shots": 86, "keyPasses": 52, "passes": 900, "tackles": 39, "interceptions": 18, "aerial": 34, "pressing": 82, "pace": 87, "style": "direct winger, pressing, dribbling"}, {"name": "Cole Palmer", "age": 23, "pos": "AM", "club": "Chelsea", "league": "Premier League", "nat": "England", "foot": "Left", "value": "£120m", "contract": "2033", "apps": 37, "goals": 15, "assists": 8, "shots": 97, "keyPasses": 82, "passes": 1340, "tackles": 29, "interceptions": 14, "aerial": 22, "pressing": 67, "pace": 76, "style": "creative playmaker, goals, final pass, left foot"}, {"name": "Enzo Fernandez", "age": 24, "pos": "CM", "club": "Chelsea", "league": "Premier League", "nat": "Argentina", "foot": "Right", "value": "£75m", "contract": "2032", "apps": 34, "goals": 5, "assists": 7, "shots": 51, "keyPasses": 62, "passes": 1980, "tackles": 59, "interceptions": 43, "aerial": 42, "pressing": 78, "pace": 66, "style": "deep playmaker, progressive passer, central midfielder"}, {"name": "Moises Caicedo", "age": 23, "pos": "DM", "club": "Chelsea", "league": "Premier League", "nat": "Ecuador", "foot": "Right", "value": "£90m", "contract": "2031", "apps": 38, "goals": 1, "assists": 4, "shots": 20, "keyPasses": 31, "passes": 2050, "tackles": 91, "interceptions": 68, "aerial": 56, "pressing": 85, "pace": 75, "style": "ball-winning midfielder, destroyer, athletic"}, {"name": "Nicolas Jackson", "age": 24, "pos": "ST", "club": "Chelsea", "league": "Premier League", "nat": "Senegal", "foot": "Right", "value": "£55m", "contract": "2033", "apps": 33, "goals": 10, "assists": 5, "shots": 76, "keyPasses": 38, "passes": 620, "tackles": 24, "interceptions": 8, "aerial": 54, "pressing": 73, "pace": 84, "style": "mobile striker, runs in behind, pressing forward"}, {"name": "Reece James", "age": 25, "pos": "RB", "club": "Chelsea", "league": "Premier League", "nat": "England", "foot": "Right", "value": "£45m", "contract": "2028", "apps": 14, "goals": 1, "assists": 2, "shots": 13, "keyPasses": 19, "passes": 580, "tackles": 25, "interceptions": 10, "aerial": 62, "pressing": 69, "pace": 79, "style": "attacking full-back, crossing, physical defender"}, {"name": "Bruno Fernandes", "age": 31, "pos": "AM", "club": "Manchester United", "league": "Premier League", "nat": "Portugal", "foot": "Right", "value": "£65m", "contract": "2027", "apps": 36, "goals": 8, "assists": 20, "shots": 105, "keyPasses": 132, "passes": 1850, "tackles": 61, "interceptions": 26, "aerial": 44, "pressing": 80, "pace": 69, "style": "creative playmaker, chance creation, leadership"}, {"name": "Kobbie Mainoo", "age": 20, "pos": "CM", "club": "Manchester United", "league": "Premier League", "nat": "England", "foot": "Right", "value": "£55m", "contract": "2027", "apps": 25, "goals": 3, "assists": 1, "shots": 21, "keyPasses": 24, "passes": 1050, "tackles": 44, "interceptions": 29, "aerial": 34, "pressing": 75, "pace": 72, "style": "young midfielder, press resistant, ball carrier"}, {"name": "Marcus Rashford", "age": 27, "pos": "LW", "club": "Manchester United", "league": "Premier League", "nat": "England", "foot": "Right", "value": "£60m", "contract": "2028", "apps": 33, "goals": 7, "assists": 3, "shots": 71, "keyPasses": 38, "passes": 760, "tackles": 18, "interceptions": 9, "aerial": 29, "pressing": 58, "pace": 88, "style": "pacey forward, transition runner, wide scorer"}, {"name": "Alejandro Garnacho", "age": 21, "pos": "LW", "club": "Manchester United", "league": "Premier League", "nat": "Argentina", "foot": "Right", "value": "£50m", "contract": "2028", "apps": 36, "goals": 8, "assists": 5, "shots": 83, "keyPasses": 46, "passes": 690, "tackles": 31, "interceptions": 11, "aerial": 24, "pressing": 77, "pace": 89, "style": "young winger, direct, high-energy runner"}, {"name": "Lisandro Martinez", "age": 27, "pos": "CB", "club": "Manchester United", "league": "Premier League", "nat": "Argentina", "foot": "Left", "value": "£45m", "contract": "2027", "apps": 21, "goals": 1, "assists": 1, "shots": 11, "keyPasses": 9, "passes": 1220, "tackles": 43, "interceptions": 34, "aerial": 49, "pressing": 68, "pace": 68, "style": "left-footed centre back, aggressive defender, passer"}, {"name": "Alexander Isak", "age": 25, "pos": "ST", "club": "Newcastle United", "league": "Premier League", "nat": "Sweden", "foot": "Right", "value": "£120m", "contract": "2028", "apps": 34, "goals": 23, "assists": 6, "shots": 96, "keyPasses": 40, "passes": 690, "tackles": 16, "interceptions": 7, "aerial": 58, "pressing": 63, "pace": 85, "style": "clinical striker, technical finisher, mobile forward"}, {"name": "Bruno Guimaraes", "age": 27, "pos": "CM", "club": "Newcastle United", "league": "Premier League", "nat": "Brazil", "foot": "Right", "value": "£85m", "contract": "2028", "apps": 37, "goals": 4, "assists": 7, "shots": 44, "keyPasses": 58, "passes": 2120, "tackles": 76, "interceptions": 48, "aerial": 50, "pressing": 79, "pace": 67, "style": "central midfielder, progressive passer, duel winner"}, {"name": "Anthony Gordon", "age": 24, "pos": "LW", "club": "Newcastle United", "league": "Premier League", "nat": "England", "foot": "Right", "value": "£75m", "contract": "2026", "apps": 34, "goals": 9, "assists": 7, "shots": 72, "keyPasses": 59, "passes": 820, "tackles": 41, "interceptions": 15, "aerial": 33, "pressing": 84, "pace": 88, "style": "pressing winger, pace, direct ball carrying"}, {"name": "Sandro Tonali", "age": 25, "pos": "CM", "club": "Newcastle United", "league": "Premier League", "nat": "Italy", "foot": "Right", "value": "£45m", "contract": "2028", "apps": 25, "goals": 2, "assists": 3, "shots": 31, "keyPasses": 36, "passes": 1340, "tackles": 52, "interceptions": 34, "aerial": 48, "pressing": 76, "pace": 70, "style": "technical midfielder, passing range, work rate"}, {"name": "Ollie Watkins", "age": 29, "pos": "ST", "club": "Aston Villa", "league": "Premier League", "nat": "England", "foot": "Right", "value": "£65m", "contract": "2028", "apps": 38, "goals": 16, "assists": 8, "shots": 98, "keyPasses": 52, "passes": 730, "tackles": 22, "interceptions": 8, "aerial": 59, "pressing": 72, "pace": 83, "style": "pressing striker, runs channels, goals and assists"}, {"name": "Morgan Rogers", "age": 23, "pos": "AM", "club": "Aston Villa", "league": "Premier League", "nat": "England", "foot": "Right", "value": "£45m", "contract": "2030", "apps": 34, "goals": 8, "assists": 6, "shots": 62, "keyPasses": 45, "passes": 980, "tackles": 39, "interceptions": 18, "aerial": 53, "pressing": 73, "pace": 78, "style": "young attacking midfielder, ball carrier, physical"}, {"name": "Youri Tielemans", "age": 28, "pos": "CM", "club": "Aston Villa", "league": "Premier League", "nat": "Belgium", "foot": "Right", "value": "£30m", "contract": "2027", "apps": 35, "goals": 3, "assists": 7, "shots": 46, "keyPasses": 60, "passes": 1900, "tackles": 51, "interceptions": 38, "aerial": 44, "pressing": 69, "pace": 62, "style": "central playmaker, passing, set pieces"}, {"name": "Pau Torres", "age": 28, "pos": "CB", "club": "Aston Villa", "league": "Premier League", "nat": "Spain", "foot": "Left", "value": "£40m", "contract": "2028", "apps": 30, "goals": 2, "assists": 1, "shots": 16, "keyPasses": 11, "passes": 1960, "tackles": 34, "interceptions": 37, "aerial": 67, "pressing": 52, "pace": 66, "style": "left-footed ball-playing centre back"}, {"name": "Son Heung-min", "age": 33, "pos": "LW", "club": "Tottenham Hotspur", "league": "Premier League", "nat": "South Korea", "foot": "Right", "value": "£40m", "contract": "2026", "apps": 35, "goals": 11, "assists": 10, "shots": 82, "keyPasses": 64, "passes": 930, "tackles": 23, "interceptions": 10, "aerial": 31, "pressing": 62, "pace": 84, "style": "wide forward, finishing, movement, leadership"}, {"name": "James Maddison", "age": 28, "pos": "AM", "club": "Tottenham Hotspur", "league": "Premier League", "nat": "England", "foot": "Right", "value": "£55m", "contract": "2028", "apps": 31, "goals": 8, "assists": 9, "shots": 64, "keyPasses": 78, "passes": 1210, "tackles": 35, "interceptions": 16, "aerial": 28, "pressing": 71, "pace": 67, "style": "creative number ten, set pieces, final pass"}, {"name": "Micky van de Ven", "age": 24, "pos": "CB", "club": "Tottenham Hotspur", "league": "Premier League", "nat": "Netherlands", "foot": "Left", "value": "£55m", "contract": "2029", "apps": 29, "goals": 3, "assists": 1, "shots": 15, "keyPasses": 8, "passes": 1680, "tackles": 37, "interceptions": 36, "aerial": 72, "pressing": 59, "pace": 91, "style": "fast left-footed centre back, recovery pace"}, {"name": "Pedro Porro", "age": 25, "pos": "RB", "club": "Tottenham Hotspur", "league": "Premier League", "nat": "Spain", "foot": "Right", "value": "£50m", "contract": "2028", "apps": 35, "goals": 4, "assists": 7, "shots": 61, "keyPasses": 74, "passes": 1650, "tackles": 57, "interceptions": 33, "aerial": 41, "pressing": 70, "pace": 78, "style": "attacking right back, crossing, chance creation"}, {"name": "Evan Ferguson", "age": 20, "pos": "ST", "club": "Brighton & Hove Albion", "league": "Premier League", "nat": "Ireland", "foot": "Right", "value": "£45m", "contract": "2029", "apps": 25, "goals": 6, "assists": 1, "shots": 44, "keyPasses": 15, "passes": 310, "tackles": 11, "interceptions": 5, "aerial": 76, "pressing": 60, "pace": 70, "style": "young striker, physical, penalty-box presence"}, {"name": "Kaoru Mitoma", "age": 28, "pos": "LW", "club": "Brighton & Hove Albion", "league": "Premier League", "nat": "Japan", "foot": "Right", "value": "£50m", "contract": "2027", "apps": 26, "goals": 5, "assists": 4, "shots": 46, "keyPasses": 39, "passes": 610, "tackles": 24, "interceptions": 11, "aerial": 20, "pressing": 68, "pace": 86, "style": "dribbling winger, one-v-one, left-side creator"}, {"name": "Carlos Baleba", "age": 21, "pos": "DM", "club": "Brighton & Hove Albion", "league": "Premier League", "nat": "Cameroon", "foot": "Left", "value": "£35m", "contract": "2028", "apps": 32, "goals": 2, "assists": 1, "shots": 30, "keyPasses": 24, "passes": 1280, "tackles": 69, "interceptions": 45, "aerial": 58, "pressing": 82, "pace": 77, "style": "young defensive midfielder, athletic ball winner"}, {"name": "Joao Pedro", "age": 23, "pos": "ST", "club": "Brighton & Hove Albion", "league": "Premier League", "nat": "Brazil", "foot": "Right", "value": "£60m", "contract": "2028", "apps": 31, "goals": 10, "assists": 5, "shots": 69, "keyPasses": 42, "passes": 690, "tackles": 28, "interceptions": 9, "aerial": 47, "pressing": 74, "pace": 80, "style": "technical forward, link play, penalties"}, {"name": "Jarrod Bowen", "age": 28, "pos": "RW", "club": "West Ham United", "league": "Premier League", "nat": "England", "foot": "Left", "value": "£50m", "contract": "2030", "apps": 34, "goals": 13, "assists": 6, "shots": 82, "keyPasses": 51, "passes": 780, "tackles": 34, "interceptions": 14, "aerial": 43, "pressing": 71, "pace": 82, "style": "left-footed right winger, goals, work rate"}, {"name": "Lucas Paqueta", "age": 28, "pos": "AM", "club": "West Ham United", "league": "Premier League", "nat": "Brazil", "foot": "Left", "value": "£55m", "contract": "2027", "apps": 30, "goals": 4, "assists": 6, "shots": 45, "keyPasses": 59, "passes": 1260, "tackles": 64, "interceptions": 31, "aerial": 49, "pressing": 80, "pace": 67, "style": "creative midfielder, flair, pressing"}, {"name": "Mohammed Kudus", "age": 24, "pos": "RW", "club": "West Ham United", "league": "Premier League", "nat": "Ghana", "foot": "Left", "value": "£65m", "contract": "2028", "apps": 35, "goals": 8, "assists": 5, "shots": 68, "keyPasses": 44, "passes": 740, "tackles": 42, "interceptions": 16, "aerial": 44, "pressing": 77, "pace": 85, "style": "powerful dribbler, right winger, ball carrying"}, {"name": "Eberechi Eze", "age": 27, "pos": "AM", "club": "Crystal Palace", "league": "Premier League", "nat": "England", "foot": "Right", "value": "£60m", "contract": "2027", "apps": 31, "goals": 8, "assists": 7, "shots": 70, "keyPasses": 64, "passes": 920, "tackles": 30, "interceptions": 13, "aerial": 23, "pressing": 65, "pace": 78, "style": "creative attacking midfielder, ball carrier, final third"}, {"name": "Michael Olise", "age": 23, "pos": "RW", "club": "Crystal Palace", "league": "Premier League", "nat": "France", "foot": "Left", "value": "£60m", "contract": "2027", "apps": 24, "goals": 10, "assists": 6, "shots": 58, "keyPasses": 63, "passes": 750, "tackles": 23, "interceptions": 8, "aerial": 18, "pressing": 61, "pace": 81, "style": "left-footed creator, right winger, set pieces"}, {"name": "Jean-Ricner Bellegarde", "age": 27, "pos": "CM", "club": "Wolverhampton Wanderers", "league": "Premier League", "nat": "France", "foot": "Right", "value": "£15m", "contract": "2028", "apps": 30, "goals": 3, "assists": 4, "shots": 36, "keyPasses": 32, "passes": 780, "tackles": 48, "interceptions": 28, "aerial": 37, "pressing": 76, "pace": 74, "style": "energetic midfielder, pressing, ball progression"}, {"name": "Matheus Cunha", "age": 26, "pos": "ST", "club": "Wolverhampton Wanderers", "league": "Premier League", "nat": "Brazil", "foot": "Right", "value": "£55m", "contract": "2027", "apps": 33, "goals": 15, "assists": 6, "shots": 83, "keyPasses": 48, "passes": 760, "tackles": 31, "interceptions": 12, "aerial": 42, "pressing": 73, "pace": 82, "style": "mobile forward, dribbler, scorer and creator"}, {"name": "Dominic Solanke", "age": 27, "pos": "ST", "club": "Bournemouth", "league": "Premier League", "nat": "England", "foot": "Right", "value": "£45m", "contract": "2027", "apps": 38, "goals": 19, "assists": 3, "shots": 104, "keyPasses": 35, "passes": 650, "tackles": 29, "interceptions": 10, "aerial": 74, "pressing": 75, "pace": 76, "style": "physical striker, box finisher, pressing"}, {"name": "Antoine Semenyo", "age": 25, "pos": "RW", "club": "Bournemouth", "league": "Premier League", "nat": "Ghana", "foot": "Right", "value": "£30m", "contract": "2029", "apps": 36, "goals": 8, "assists": 4, "shots": 77, "keyPasses": 41, "passes": 620, "tackles": 40, "interceptions": 16, "aerial": 61, "pressing": 82, "pace": 87, "style": "powerful winger, pressing, transition threat"}];
+
+let CLAUDE_API_KEY = "";
+let USE_CLAUDE = false;
+let CURRENT_MODEL = "claude-sonnet-4-6";
+let CURRENT_RESULTS = [];
+let CURRENT_SEARCH_MODEL = null;
+
+function connectClaude(){
+  const key = document.getElementById("apiKey").value.trim();
+  if(!key.startsWith("sk-ant-")){
+    alert("Please paste a Claude API key starting with sk-ant-");
+    return;
+  }
+  CLAUDE_API_KEY = key;
+  USE_CLAUDE = true;
+  CURRENT_MODEL = document.getElementById("modelSelect").value;
+  document.getElementById("apiKey").value = "••••••••••••••••••••";
+  document.getElementById("modeText").textContent = "Current mode: Claude API connected · Model: " + CURRENT_MODEL;
+  document.getElementById("modeChip").textContent = "Claude mode active";
+  addMsg("ai", "Claude mode is now active using " + CURRENT_MODEL + ". I will use Claude to understand football language, then rank players from the local dataset.");
+}
+
+function norm(s){return (s||'').toLowerCase();}
+function moneyNum(v){return parseFloat(String(v).replace(/[£m]/g,''))*1000000;}
+
+function parseQuery(q){
+  const t = norm(q);
+  const f = {raw:q, terms:[]};
+
+  if(/young|potential|u23|under 23|under-23/.test(t)){f.maxAge=23; f.terms.push("young / U23");}
+  if(/under 25|u25|under-25/.test(t)){f.maxAge=25; f.terms.push("under 25");}
+  if(/experienced|leader|leadership|senior/.test(t)){f.minAge=28; f.terms.push("experience / leadership");}
+
+  if(/left[- ]?foot|left footed/.test(t)){f.foot="Left"; f.terms.push("left-footed");}
+  if(/right[- ]?foot|right footed/.test(t)){f.foot="Right"; f.terms.push("right-footed");}
+
+  if(/striker|forward|number 9|clinical|finisher|goalscorer|ronaldo|haaland/.test(t)){f.pos=["ST"]; f.attack=true; f.terms.push("striker / goals");}
+  if(/winger|wide|rw|right wing/.test(t)){f.pos=(f.pos||[]).concat(["RW","LW"]); f.terms.push("winger");}
+  if(/left wing|lw/.test(t)){f.pos=["LW"]; f.terms.push("left winger");}
+  if(/right wing|rw/.test(t)){f.pos=["RW"]; f.terms.push("right winger");}
+  if(/playmaker|creative|number 10|chance|assist|key pass|bruno|odegaard/.test(t)){f.pos=(f.pos||[]).concat(["AM","CM"]); f.creative=true; f.terms.push("creative profile");}
+  if(/midfield|cm|box-to-box|box to box/.test(t)){f.pos=(f.pos||[]).concat(["CM","DM","AM"]); f.terms.push("midfielder");}
+  if(/defensive midfielder|dm|kante|ball[- ]?winner|destroyer|tackles|interceptions/.test(t)){f.pos=["DM","CM"]; f.defensive=true; f.terms.push("ball-winning midfielder");}
+  if(/centre back|center back|cb|defender|ball playing defender/.test(t)){f.pos=["CB"]; f.defender=true; f.terms.push("centre back");}
+  if(/full[- ]?back|right back|left back|rb|lb/.test(t)){f.pos=(f.pos||[]).concat(["RB","LB"]); f.terms.push("full-back");}
+  if(/pace|fast|quick|speed|transition/.test(t)){f.pace=true; f.terms.push("pace");}
+  if(/press|pressing|work rate|intense|energetic|high energy/.test(t)){f.pressing=true; f.terms.push("pressing");}
+  if(/aerial|header|headers|physical|strong/.test(t)){f.aerial=true; f.terms.push("aerial / physical");}
+  if(/cheap|affordable|low cost|budget|bargain/.test(t)){f.valueCap=40000000; f.terms.push("lower-cost PL profile");}
+
+  return f;
+}
+
+async function parseWithClaude(q){
+  const systemPrompt = `You are a football recruitment analyst for Barnet FC.
+
+Your job is to convert a user's natural-language recruitment request into:
+1. intent
+2. hardFilters
+3. scoringModel
+
+Return ONLY valid JSON. No markdown.
+
+Intent:
+- "recruitment_search" if the user asks to find/search/recommend/shortlist/rank/replace players.
+- "chat" if the user asks a general question, explanation, or small talk.
+
+Hard filters:
+These are non-negotiable constraints. If a player fails them, they must be excluded before scoring.
+Examples:
+- position, role, foot, age limit, budget/value limit, league, nationality, contract status.
+- Words like must, only, need, require, under, below, less than, no more than, maximum, right-footed, left-footed usually indicate hard filters.
+- Chinese: 必须, 只要, 不超过, 低于, 预算, 右脚, 左脚, 年龄以下 usually indicate hard filters.
+
+Soft preferences:
+These become scoring factors.
+Examples:
+chance creation, pressing, work rate, physicality, aerial ability, defensive output, ball-winning, pace, goalscoring, leadership, potential.
+Chinese: 擅长, 最好, 希望, 有一定, 创造机会, 跑动, 压迫, 防守能力, 头球, 速度, 潜力.
+
+Available player fields:
+age, pos, foot, value, goals, assists, shots, keyPasses, passes, tackles, interceptions, aerial, pressing, pace.
+
+JSON format:
+{
+  "intent": "recruitment_search",
+  "chat_answer": "",
+  "hardFilters": {
+    "positions": ["AM"],
+    "foot": "Right",
+    "maxAge": null,
+    "minAge": null,
+    "maxValueM": 50,
+    "league": null
+  },
+  "scoringModel": [
+    {
+      "factor": "Chance creation",
+      "fields": ["assists", "keyPasses"],
+      "weight": 40,
+      "reason": "The user asked for a player good at creating chances."
+    },
+    {
+      "factor": "Work rate / pressing",
+      "fields": ["pressing"],
+      "weight": 30,
+      "reason": "The user mentioned running/work rate/pressing."
+    }
+  ],
+  "detectedTerms": ["right-footed", "No.10", "chance creation", "under £50m"]
+}
+
+Rules:
+- Total scoringModel weights must add up to 100.
+- Use 3 to 5 scoring factors.
+- If the user says No.10, 10 position, attacking midfielder, 前腰, set positions to ["AM"].
+- If the user says box-to-box midfielder, b2b, set positions to ["CM"] or ["CM","DM","AM"] depending on context.
+- If the user says striker/前锋/中锋, set positions to ["ST"].
+- If winger/边锋, set positions to ["LW","RW"].
+- If right foot/右脚, hardFilters.foot = "Right".
+- If left foot/左脚, hardFilters.foot = "Left".
+- If under £50m / less than 50m / 5000万以下, hardFilters.maxValueM = 50.
+- If under £30m / 3000万以下, hardFilters.maxValueM = 30.
+- If the user gives a budget, it is ALWAYS a hard filter, not a scoring factor.
+- If no hard position is clearly required, positions can be [].
+- If intent is chat, return intent:"chat", chat_answer, and empty hardFilters/scoringModel.`;
+
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": CLAUDE_API_KEY,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true"
+    },
+    body: JSON.stringify({
+      model: CURRENT_MODEL,
+      max_tokens: 900,
+      system: systemPrompt,
+      messages: [{role:"user", content:q}]
+    })
+  });
+
+  const raw = await res.text();
+  let data;
+  try { data = JSON.parse(raw); }
+  catch(e) { throw new Error("Non-JSON response. HTTP " + res.status + ": " + raw.slice(0, 200)); }
+
+  if(!res.ok || data.error){
+    const msg = data?.error?.message || raw.slice(0, 300);
+    throw new Error("HTTP " + res.status + " · " + msg);
+  }
+
+  const text = data.content?.[0]?.text || "{}";
+  const clean = text.replace(/```json|```/g, "").trim();
+  let parsed;
+  try { parsed = JSON.parse(clean); }
+  catch(e) { throw new Error("Claude returned non-JSON text: " + text.slice(0, 250)); }
+
+  if(parsed.intent === "chat"){
+    return {
+      raw:q,
+      intent:"chat",
+      chat_answer: parsed.chat_answer || "I can help explain recruitment terms, scoring logic, or player profiles."
+    };
+  }
+
+  return {
+    raw:q,
+    intent:"recruitment_search",
+    hardFilters: parsed.hardFilters || {},
+    scoringModel: parsed.scoringModel || [],
+    detectedTerms: parsed.detectedTerms || []
+  };
+}
+
+
+function valueM(p){
+  return moneyNum(p.value) / 1000000;
+}
+
+function passesHardFilters(p, model){
+  const h = model.hardFilters || {};
+  const reasons = [];
+
+  if(h.positions && h.positions.length && !h.positions.includes(p.pos)){
+    reasons.push("Position " + p.pos + " excluded");
+  }
+  if(h.foot && p.foot !== h.foot){
+    reasons.push("Foot " + p.foot + " excluded");
+  }
+  if(h.maxAge && p.age > h.maxAge){
+    reasons.push("Age " + p.age + " above limit");
+  }
+  if(h.minAge && p.age < h.minAge){
+    reasons.push("Age " + p.age + " below limit");
+  }
+  if(h.maxValueM && valueM(p) > h.maxValueM){
+    reasons.push("Value " + p.value + " above budget £" + h.maxValueM + "m");
+  }
+  if(h.league && p.league !== h.league){
+    reasons.push("League " + p.league + " excluded");
+  }
+
+  return {pass: reasons.length === 0, reasons};
+}
+
+function fieldScore(p, fields){
+  // Normalize simple demo data to 0-100 scale.
+  const caps = {
+    goals: 25,
+    assists: 15,
+    shots: 120,
+    keyPasses: 100,
+    passes: 2500,
+    tackles: 100,
+    interceptions: 70,
+    aerial: 100,
+    pressing: 100,
+    pace: 100,
+    age: 35
+  };
+
+  if(!fields || !fields.length) return 50;
+
+  let scores = fields.map(field => {
+    if(field === "value") {
+      // Lower value is better
+      return Math.max(0, Math.min(100, 100 - valueM(p)));
+    }
+    if(field === "age") {
+      // Demo assumption: 21-27 is strong for recruitment
+      if(p.age >= 21 && p.age <= 27) return 90;
+      if(p.age <= 30) return 70;
+      return 45;
+    }
+    const cap = caps[field] || 100;
+    const raw = Number(p[field] || 0);
+    return Math.max(0, Math.min(100, raw / cap * 100));
+  });
+
+  return scores.reduce((a,b)=>a+b,0) / scores.length;
+}
+
+function scoreByModel(p, model){
+  const breakdown = [];
+  let total = 0;
+  const scoring = model.scoringModel && model.scoringModel.length ? model.scoringModel : [
+    {factor:"Overall attacking output", fields:["goals","assists","keyPasses"], weight:40, reason:"Default attacking profile"},
+    {factor:"Work rate", fields:["pressing"], weight:30, reason:"Default work-rate profile"},
+    {factor:"Age profile", fields:["age"], weight:30, reason:"Default recruitment age profile"}
+  ];
+
+  scoring.forEach(factor => {
+    const raw = fieldScore(p, factor.fields);
+    const contribution = raw * (factor.weight / 100);
+    total += contribution;
+    breakdown.push({
+      factor: factor.factor,
+      fields: factor.fields,
+      weight: factor.weight,
+      rawScore: Math.round(raw),
+      contribution: Math.round(contribution),
+      reason: factor.reason || ""
+    });
+  });
+
+  const finalScore = Math.max(1, Math.min(98, Math.round(total)));
+  const topDrivers = breakdown
+    .sort((a,b)=>b.contribution-a.contribution)
+    .slice(0,3)
+    .map(x => x.factor + " " + x.rawScore + "/100");
+
+  return {
+    score: finalScore,
+    reason: topDrivers.join(", ") + ".",
+    breakdown
+  };
+}
+
+function scorePlayer(p, model){
+  return scoreByModel(p, model);
+}
+
+function clearChat(){
+  const chat = document.getElementById("chat");
+  chat.innerHTML = '<div class="msg ai"><div class="bubble">Chat cleared. You can search for players or ask recruitment questions.</div></div>';
+}
+
+function addMsg(role, text){
+  const chat = document.getElementById("chat");
+  const d = document.createElement("div");
+  d.className = "msg " + role;
+  d.innerHTML = `<div class="bubble"></div>`;
+  d.querySelector(".bubble").textContent = text;
+  chat.appendChild(d);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function renderThinking(model){
+  const panel = document.getElementById("thinkingPanel");
+  const body = document.getElementById("thinkingBody");
+  if(!panel || !body) return;
+  body.innerHTML = "";
+
+  const h = model.hardFilters || {};
+  const chips = [];
+
+  if(h.positions && h.positions.length) chips.push(["Hard filter", "Position: " + h.positions.join(" / ")]);
+  if(h.foot) chips.push(["Hard filter", "Foot: " + h.foot]);
+  if(h.maxAge) chips.push(["Hard filter", "Age ≤ " + h.maxAge]);
+  if(h.minAge) chips.push(["Hard filter", "Age ≥ " + h.minAge]);
+  if(h.maxValueM) chips.push(["Hard filter", "Value ≤ £" + h.maxValueM + "m"]);
+  if(h.league) chips.push(["Hard filter", "League: " + h.league]);
+
+  (model.scoringModel || []).forEach(s => {
+    chips.push(["Scoring", s.factor + " · " + s.weight + "%"]);
+  });
+
+  if(model.detectedTerms && model.detectedTerms.length) {
+    chips.push(["Detected terms", model.detectedTerms.join(" · ")]);
+  }
+
+  if(!chips.length) { panel.style.display = "none"; return; }
+
+  chips.forEach(([k,v])=>{
+    const chip = document.createElement("div");
+    chip.style.cssText = "background:#fff5ed;border:1px solid rgba(244,124,32,.35);border-radius:999px;padding:8px 11px;font-size:12px;color:#111;";
+    chip.innerHTML = '<b style="color:#8a3a00;">' + k + '</b>: ' + v;
+    body.appendChild(chip);
+  });
+  panel.style.display = "block";
+}
+
+function render(results, model){
+  document.body.classList.remove("initial-state");
+  const title = document.getElementById("pageTitle");
+  const subtitle = document.getElementById("pageSubtitle");
+  if(title) title.textContent = "Recommended Players";
+  if(subtitle) subtitle.textContent = "AI-ranked shortlist based on the current recruitment brief.";
+  CURRENT_RESULTS = results;
+  renderThinking(model);
+  const cards = document.getElementById("cards");
+  const tbody = document.getElementById("tbody");
+  cards.innerHTML = "";
+  tbody.innerHTML = "";
+  document.getElementById("filters").textContent = model.detectedTerms && model.detectedTerms.length ? "Detected: " + model.detectedTerms.join(" · ") : "Showing candidates after hard filters";
+
+  if(!results.length){
+    cards.innerHTML = '<div class="card"><h3>No matching players</h3><div class="reason">All players were excluded by the hard filters. Try widening the budget, position, foot, or age requirements.</div></div>';
+  }
+  results.slice(0,3).forEach(r => {
+    const p = r.player;
+    const div = document.createElement("div");
+    div.className = "card";
+    div.innerHTML = `
+      <div class="cardTop">
+        <div><h3>${p.name}</h3><div class="meta">${p.pos} · ${p.age} yrs · ${p.foot} foot · ${p.nat}<br>${p.club} · ${p.league}</div></div>
+        <div class="match ${r.score<75?'low':''}">${r.score}%</div>
+      </div>
+      <div class="reason">${r.reason}</div>
+      <button class="breakdownBtn" onclick="openBreakdown('${p.name.replace(/'/g, "\\'")}')">Open Scout Report</button>
+      <div class="stats">
+        <div class="stat"><span>Value</span><b>${p.value}</b></div>
+        <div class="stat"><span>Contract</span><b>${p.contract}</b></div>
+        <div class="stat"><span>Goals</span><b>${p.goals}</b></div>
+        <div class="stat"><span>Assists</span><b>${p.assists}</b></div>
+        <div class="stat"><span>Key passes</span><b>${p.keyPasses}</b></div>
+        <div class="stat"><span>Tackles</span><b>${p.tackles}</b></div>
+        <div class="stat"><span>Pressing</span><b>${p.pressing}</b></div>
+        <div class="stat"><span>Aerial</span><b>${p.aerial}</b></div>
+      </div>`;
+    cards.appendChild(div);
+  });
+
+  results.slice(0,12).forEach(r => {
+    const p = r.player;
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td><b>${p.name}</b></td><td>${p.age}</td><td>${p.pos}</td><td>${p.club}</td><td>${p.foot}</td><td>${p.value}</td><td>${p.goals}</td><td>${p.assists}</td><td>${p.pressing}</td><td>${p.aerial}</td><td><b>${r.score}%</b></td><td><button class="tableBreakdownBtn" onclick="openBreakdown('${p.name.replace(/'/g, "\\'")}')">Open</button></td><td class="reasonCol">${r.reason}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+
+
+
+
+
+// PLAYER LOOKUP V2 - fuzzy candidate list
+function normaliseNameText(s){
+  return (s || "").toLowerCase().replace(/[^a-z0-9\s]/g,"").replace(/\s+/g," ").trim();
+}
+
+function findPlayerCandidates(query){
+  const q = normaliseNameText(query)
+    .replace(/^(show me|analyse|analyze|profile|tell me about|search|find|look up)\s+/,"")
+    .trim();
+
+  if(!q || q.length < 2) return [];
+
+  return PLAYERS.filter(p => {
+    const name = normaliseNameText(p.name);
+    const parts = name.split(" ");
+    return name.includes(q) || parts.some(part => part.startsWith(q) || part.includes(q));
+  }).slice(0,9);
+}
+
+function renderPlayerLookupCandidates(candidates, query){
+  const panel = document.getElementById("playerLookupPanel");
+  const cards = document.getElementById("cards");
+  const tbody = document.getElementById("tbody");
+  const thinkingPanel = document.getElementById("thinkingPanel");
+
+  if(!panel) return;
+
+  if(cards) cards.innerHTML = "";
+  if(tbody) tbody.innerHTML = "";
+  if(thinkingPanel) thinkingPanel.style.display = "none";
+
+  panel.style.display = "block";
+  panel.className = "playerLookupPanel";
+
+  if(!candidates.length){
+    panel.innerHTML = `
+      <div class="playerLookupHead">
+        <b>Player Lookup</b>
+        <span style="color:#f2b17f;font-size:12px;">No player found</span>
+      </div>
+      <div style="padding:14px;color:#344054;font-size:13px;">
+        No player matched "<b>${query}</b>" in the demo database.
+      </div>`;
+    return;
+  }
+
+  panel.innerHTML = `
+    <div class="playerLookupHead">
+      <b>Player Lookup</b>
+      <span style="color:#f2b17f;font-size:12px;">${candidates.length} candidate${candidates.length > 1 ? "s" : ""} found</span>
+    </div>
+    <div class="playerLookupBody">
+      ${candidates.map(p => `
+        <div class="lookupCard" onclick="openPlayerLookupProfile('${p.name.replace(/'/g, "\\'")}')">
+          <h3>${p.name}</h3>
+          <div class="lookupMeta">
+            ${p.pos} · ${p.age} yrs · ${p.foot} foot<br>
+            ${p.club} · ${p.league}<br>
+            Value: ${p.value} · Contract: ${p.contract}
+          </div>
+          <div class="lookupTag">Open Scout Report</div>
+        </div>
+      `).join("")}
+    </div>`;
+}
+
+function buildLookupResult(player){
+  const model = {
+    raw:"Player lookup: " + player.name,
+    intent:"player_lookup",
+    hardFilters:{},
+    scoringModel:[
+      {factor:"Attacking Output",fields:["goals","assists","shots"],weight:30,reason:"Output across goals, assists and shot volume."},
+      {factor:"Chance Creation",fields:["assists","keyPasses"],weight:25,reason:"Creative contribution and final-third involvement."},
+      {factor:"Work Rate / Pressing",fields:["pressing"],weight:20,reason:"Intensity and defensive contribution out of possession."},
+      {factor:"Physical Profile",fields:["aerial","pace"],weight:15,reason:"Athletic qualities including pace and aerial impact."},
+      {factor:"Age Profile",fields:["age"],weight:10,reason:"Recruitment age profile and future value potential."}
+    ],
+    detectedTerms:["player lookup", player.name]
+  };
+
+  return {player: player, ...scorePlayer(player, model)};
+}
+
+
+function buildPlayerProfileResult(player){
+  const profileModel = [
+    {factor:"Attacking Output",fields:["goals","assists","shots"],reason:"Goals, assists and shot volume."},
+    {factor:"Chance Creation",fields:["assists","keyPasses"],reason:"Creative contribution and final-third involvement."},
+    {factor:"Work Rate / Pressing",fields:["pressing"],reason:"Intensity and contribution out of possession."},
+    {factor:"Physical Profile",fields:["aerial","pace"],reason:"Pace and aerial impact."},
+    {factor:"Age / Value Context",fields:["age","value"],reason:"General recruitment context, not a fit score."}
+  ];
+
+  return {
+    player:player,
+    score:null,
+    reportMode:"player_profile",
+    reason:"General player profile only. No recruitment brief has been applied.",
+    breakdown:profileModel.map(item=>({
+      factor:item.factor,
+      fields:item.fields,
+      weight:0,
+      rawScore:Math.round(fieldScore(player,item.fields)),
+      contribution:null,
+      reason:item.reason
+    }))
+  };
+}
+
+function openPlayerLookupProfile(playerName){
+  const player = PLAYERS.find(p => p.name === playerName);
+  if(!player) return;
+
+  const result = buildPlayerProfileResult(player);
+  CURRENT_RESULTS = [result];
+  CURRENT_SEARCH_MODEL = {
+    raw:"General player profile: " + player.name,
+    intent:"player_profile",
+    hardFilters:{},
+    scoringModel:[],
+    detectedTerms:["player profile", player.name]
+  };
+
+  const panel = document.getElementById("playerLookupPanel");
+  if(panel) panel.style.display = "none";
+
+  addMsg("ai", "Opening general player profile for " + player.name + ". No recruitment score is applied because no recruitment brief was entered.");
+  openBreakdown(player.name);
+}
+
+
+async function search(){
+  const input = document.getElementById("q");
+  const q = input.value.trim() || "Show me the best overall recruitment profiles";
+  addMsg("user", q);
+  input.value = "";
+  input.style.height = "28px";
+
+  const candidates = findPlayerCandidates(q);
+
+  const looksLikePlayerLookup =
+    candidates.length > 0 &&
+    q.trim().length >= 2 &&
+    !/(find me|need|looking for|young|striker|winger|midfielder|defender|creative|pressing|aerial|pace|left-footed|right-footed|under\s*\d+)/i.test(q);
+
+  if(looksLikePlayerLookup){
+    addMsg("ai",
+      candidates.length === 1
+      ? "I found a matching player."
+      : "I found several matching players. Please select one."
+    );
+
+    renderPlayerLookupCandidates(candidates,q);
+    return;
+  }
+
+  let model;
+  try{
+    if(USE_CLAUDE){
+      addMsg("ai", "Reading your request with Claude...");
+      model = await parseWithClaude(q);
+      if(model.intent === "chat"){
+        addMsg("ai", model.chat_answer);
+        return;
+      }
+    } else {
+      // Fallback model for non-Claude mode
+      const f = parseQuery(q);
+      model = {
+        raw:q,
+        intent:"recruitment_search",
+        hardFilters:{
+          positions:f.pos || [],
+          foot:f.foot || null,
+          maxAge:f.maxAge || null,
+          minAge:f.minAge || null,
+          maxValueM:f.valueCap ? f.valueCap/1000000 : null
+        },
+        scoringModel:[
+          {factor:"Chance creation", fields:["assists","keyPasses"], weight:f.creative ? 40 : 25, reason:"Fallback creativity score"},
+          {factor:"Work rate / pressing", fields:["pressing"], weight:f.pressing ? 30 : 25, reason:"Fallback pressing score"},
+          {factor:"Attacking output", fields:["goals","shots"], weight:f.attack ? 30 : 25, reason:"Fallback attacking score"},
+          {factor:"Age profile", fields:["age"], weight:20, reason:"Fallback recruitment age score"}
+        ],
+        detectedTerms:f.terms || []
+      };
+    }
+  }catch(e){
+    addMsg("ai", "Claude could not parse this request. Error: " + e.message);
+    return;
+  }
+
+  CURRENT_SEARCH_MODEL = model;
+
+  const included = [];
+  const excluded = [];
+
+  PLAYERS.forEach(p => {
+    const filter = passesHardFilters(p, model);
+    if(filter.pass){
+      included.push({player:p, ...scorePlayer(p, model), reportMode:"recruitment_fit"});
+    } else {
+      excluded.push({player:p, reasons:filter.reasons});
+    }
+  });
+
+  const results = included.sort((a,b)=>b.score-a.score);
+  CURRENT_RESULTS = results;
+
+  const summary = results.slice(0,3).map(r=>r.player.name + " (" + r.score + "%)").join(", ");
+  const filterSummary = "Hard filters reduced the pool from " + PLAYERS.length + " to " + results.length + " players.";
+  addMsg("ai", filterSummary + " Top matches: " + (summary || "No players matched the hard filters.") + ".");
+  render(results, model);
+}
+function ex(t){document.getElementById("q").value=t; search();}
+
+function renderInitialDatabase(){
+  document.body.classList.add("initial-state");
+
+  const cards = document.getElementById("cards");
+  const tbody = document.getElementById("tbody");
+  const thinkingPanel = document.getElementById("thinkingPanel");
+  const lookupPanel = document.getElementById("playerLookupPanel");
+
+  if(cards) cards.innerHTML = "";
+  if(thinkingPanel) thinkingPanel.style.display = "none";
+  if(lookupPanel) lookupPanel.style.display = "none";
+
+  const title = document.getElementById("pageTitle");
+  const subtitle = document.getElementById("pageSubtitle");
+  if(title) title.textContent = "Player Database";
+  if(subtitle) subtitle.textContent = "Search a player directly, or enter a recruitment brief on the left to generate AI-ranked recommendations.";
+
+  document.getElementById("filters").textContent = "General player database · No recruitment brief applied";
+
+  tbody.innerHTML = "";
+  PLAYERS.forEach(p => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><b>${p.name}</b></td>
+      <td>${p.age}</td>
+      <td>${p.pos}</td>
+      <td>${p.club}</td>
+      <td>${p.foot}</td>
+      <td>${p.value}</td>
+      <td>${p.goals}</td>
+      <td>${p.assists}</td>
+      <td>${p.pressing}</td>
+      <td>${p.aerial}</td>
+      <td><button class="profileOpenBtn" onclick="openPlayerLookupProfile('${p.name.replace(/'/g, "\\'")}')">Open Profile</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+
+window.onload = () => {
+  renderInitialDatabase();
+}
+
+
+function buildStrengthWeaknessHTML(result){
+  const strengths=[];
+  const weaknesses=[];
+
+  (result.breakdown||[]).forEach(item=>{
+    if(item.weight < 15) return;
+
+    if(item.rawScore >= 90) strengths.push("+++ " + item.factor);
+    else if(item.rawScore >= 75) strengths.push("++ " + item.factor);
+    else if(item.rawScore >= 60) strengths.push("+ " + item.factor);
+
+    if(item.rawScore <= 25) weaknesses.push("--- " + item.factor);
+    else if(item.rawScore <= 40) weaknesses.push("-- " + item.factor);
+    else if(item.rawScore <= 55) weaknesses.push("- " + item.factor);
+  });
+
+  return `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div>
+        <div style="font-weight:800;margin-bottom:8px;">Strengths</div>
+        ${strengths.length ? strengths.map(s=>`<div style="margin:6px 0;">${s}</div>`).join("") : "<div>No major strengths identified</div>"}
+      </div>
+      <div>
+        <div style="font-weight:800;margin-bottom:8px;">Weaknesses</div>
+        ${weaknesses.length ? weaknesses.map(s=>`<div style="margin:6px 0;">${s}</div>`).join("") : "<div>No major weaknesses identified</div>"}
+      </div>
+    </div>
+  `;
+}
+
+function openBreakdown(playerName){
+  const result = CURRENT_RESULTS.find(r => r.player.name === playerName);
+  if(!result) return;
+
+  const p = result.player;
+  const isPlayerProfile = result.reportMode === "player_profile" || CURRENT_SEARCH_MODEL?.intent === "player_profile";
+
+  document.getElementById("bdName").textContent = p.name;
+  document.getElementById("bdMeta").textContent = `${p.pos} · ${p.age} yrs · ${p.foot} foot · ${p.club} · ${p.league}`;
+
+  const modeLabel = document.getElementById("bdModeLabel");
+  const context = document.getElementById("bdContext");
+  const score = document.getElementById("bdScore");
+  const scoreLabel = document.getElementById("bdScoreLabel");
+  const mainTitle = document.getElementById("bdMainTitle");
+  const helperText = document.getElementById("bdHelperText");
+  const reasonTitle = document.getElementById("bdReasonTitle");
+
+  if(isPlayerProfile){
+    if(modeLabel) modeLabel.textContent = "Player data profile";
+    if(context) context.textContent = "No recruitment brief applied";
+    if(score) score.textContent = "Profile";
+    if(scoreLabel) scoreLabel.innerHTML = "Data<br>Profile";
+    if(mainTitle) mainTitle.textContent = "General performance profile";
+    if(helperText) helperText.textContent = "This is a general player profile. These are raw performance indicators, not a recruitment-fit score.";
+    if(reasonTitle) reasonTitle.textContent = "Profile note";
+    document.getElementById("bdReason").innerHTML = "This player was opened from direct player search. To generate a Recruitment Score, enter a recruitment brief in the AI search box and open the player from the ranked shortlist.";
+  }else{
+    if(modeLabel) modeLabel.textContent = "Recruitment fit breakdown";
+    if(context) context.textContent = "Generated for: " + (CURRENT_SEARCH_MODEL?.raw || "current recruitment search");
+    if(score) score.textContent = result.score + "%";
+    if(scoreLabel) scoreLabel.innerHTML = "Recruitment<br>Score";
+    if(mainTitle) mainTitle.textContent = "Score composition";
+    if(helperText) helperText.textContent = "This shows the scoring model created for this search, and how this player performed in each weighted category.";
+    if(reasonTitle) reasonTitle.textContent = "Why this player fits";
+    document.getElementById("bdReason").innerHTML = buildStrengthWeaknessHTML(result);
+  }
+
+  const profile = [
+    ["Value", p.value], ["Contract", p.contract], ["Goals", p.goals], ["Assists", p.assists],
+    ["Key passes", p.keyPasses], ["Tackles", p.tackles], ["Pressing", p.pressing], ["Aerial", p.aerial]
+  ];
+
+  const profileBox = document.getElementById("bdProfile");
+  profileBox.innerHTML = "";
+  profile.forEach(([k,v])=>{
+    const item = document.createElement("div");
+    item.className = "profileItem";
+    item.innerHTML = `<span>${k}</span><b>${v}</b>`;
+    profileBox.appendChild(item);
+  });
+
+  const bars = document.getElementById("bdBars");
+  bars.innerHTML = "";
+
+  result.breakdown
+    .slice()
+    .sort((a,b)=> isPlayerProfile ? b.rawScore-a.rawScore : b.weight-a.weight)
+    .forEach(item=>{
+      const row = document.createElement("div");
+      row.className = "barRow";
+      const width = Math.min(100, item.rawScore);
+      const rightText = isPlayerProfile ? item.rawScore + "/100" : item.contribution;
+      const detailText = isPlayerProfile
+        ? `${item.reason}<br>Fields: ${item.fields.join(", ")}`
+        : `${item.reason}<br>Fields: ${item.fields.join(", ")} · Weight: ${item.weight}% · ${item.rawScore}/100 × ${item.weight}%`;
+      row.innerHTML = `
+        <div class="barLabel"><b>${item.factor}</b><span>${detailText}</span></div>
+        <div class="barTrack"><div class="barFill" style="width:${width}%"></div></div>
+        <div class="barPoints">${rightText}</div>
+      `;
+      bars.appendChild(row);
+    });
+
+  document.getElementById("breakdownView").classList.add("active");
+}
+
+function closeBreakdown(){
+  document.getElementById("breakdownView").classList.remove("active");
+}
+
+</script>
+
+<div id="breakdownView" class="breakdownView">
+  <div class="breakdownPage">
+    <div class="breakdownTop">
+      <button class="backBtn" onclick="closeBreakdown()">← Back to Results</button>
+      <div class="breakdownTitle">
+        <div class="miniLabel" id="bdModeLabel">Scout report breakdown</div>
+        <h2 id="bdName">Player Name</h2>
+        <p id="bdMeta"></p><p id="bdContext" style="margin-top:6px;color:#f2b17f;font-size:12px;"></p>
+      </div>
+      <div class="scoreCircle">
+        <span id="bdScore">0%</span>
+        <small id="bdScoreLabel">Recruitment<br>Score</small>
+      </div>
+    </div>
+
+    <div class="breakdownGrid">
+      <div class="breakdownCard big">
+        <h3 id="bdMainTitle">Score composition</h3>
+        <p id="bdHelperText" class="helperText">This shows the scoring model Claude created for this search, and how this player performed in each weighted category.</p>
+        <div id="bdBars"></div>
+      </div>
+
+      <div class="breakdownCard">
+        <h3>Key profile</h3>
+        <div id="bdProfile" class="profileGrid"></div>
+      </div>
+
+      <div class="breakdownCard">
+        <h3 id="bdReasonTitle">Recruitment Profile</h3>
+        <div id="bdReason" class="fitText"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+<script>
+(function(){
+function gpMatches(q){
+  if(typeof PLAYERS==="undefined") return [];
+  q=(q||"").toLowerCase().trim();
+  if(q.length<2) return [];
+  return PLAYERS.filter(p=>{
+    const name=(p.name||"").toLowerCase();
+    return name.includes(q) || name.split(" ").some(part=>part.startsWith(q));
+  }).slice(0,8);
+}
+function renderGlobalAutocomplete(list){
+  const box=document.getElementById("globalAutocomplete");
+  if(!box) return;
+  if(!list.length){box.style.display="none";return;}
+  box.innerHTML=list.map(p=>`
+    <div class="globalItem" onclick="openGlobalPlayerDirect('${p.name.replace(/'/g,"\\'")}')">
+      <strong>${p.name}</strong>
+      <div class="meta">${p.club||""} · ${p.pos||""} · ${p.age||""} yrs · ${p.foot||""} foot</div>
+    </div>
+  `).join("");
+  box.style.display="block";
+}
+window.openGlobalPlayerDirect=function(name){
+  const box=document.getElementById("globalAutocomplete");
+  const input=document.getElementById("globalPlayerSearch");
+  if(box) box.style.display="none";
+  if(input) input.value=name;
+  if(typeof openPlayerLookupProfile==="function"){
+    openPlayerLookupProfile(name);
+  }
+};
+window.addEventListener("load",()=>{
+  const input=document.getElementById("globalPlayerSearch");
+  const box=document.getElementById("globalAutocomplete");
+  if(!input) return;
+  input.addEventListener("input",()=>renderGlobalAutocomplete(gpMatches(input.value)));
+  input.addEventListener("keydown",(e)=>{
+    if(e.key==="Enter"){
+      const matches=gpMatches(input.value);
+      if(matches.length){
+        openGlobalPlayerDirect(matches[0].name);
+      }
+    }
+  });
+  document.addEventListener("click",(e)=>{
+    if(box && !e.target.closest(".globalSearchWrap")) box.style.display="none";
+  });
+});
+})();
+</script>
+
+
+
+
+<script id="composer-clean-v13-js">
+window.addEventListener("load",()=>{
+  const q=document.getElementById("q");
+  if(!q) return;
+  function resizeComposer(){
+    q.style.height="28px";
+    q.style.height=Math.min(Math.max(q.scrollHeight,28),96)+"px";
+  }
+  q.addEventListener("input",resizeComposer);
+  q.addEventListener("keydown",(e)=>{
+    if(e.key==="Enter" && !e.shiftKey){
+      e.preventDefault();
+      if(typeof search==="function") search();
+      q.value="";
+      resizeComposer();
+    }
+  });
+  resizeComposer();
+});
+</script>
+
+
+</body>
+</html>
